@@ -1,1 +1,95 @@
 
+# My first virtual assistant .
+import speech_recognition as sr     # i write as sr to make short speechrecogninthion as sr
+import webbrowser
+import pyttsx3    # text to speech
+import musicLibrary
+import requests
+from openai import OpenAI
+
+
+
+recogniser = sr.Recognizer()                            # recognisor
+engine = pyttsx3.init() 
+newsapi = "6a730e42d23347bbb698f94b9ad57dd4"          # initialising pyttsx3
+
+
+def speak(text):
+    engine.say(text)
+    engine.runAndWait()
+    
+def aiprocess(command):    # need subscription to run
+    client = OpenAI( api_key=" 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",)
+                
+    completion = client.chat.completions.create(
+    model="gpt-3.5-turbo",
+    messages=[
+        {"role" : "system", "content" : command},
+        {"role" : "user", "content" : command}
+    ]
+)
+    return print(completion.choices[0].message.content)
+
+def processCommand(c):
+    if "open google" in c.lower():
+        webbrowser.open("https://google.com")
+    elif "open youtube" in c.lower():
+        webbrowser.open("https://youtube.com")
+    elif "open facebook" in c.lower():
+        webbrowser.open("https://facebook.com")
+    elif "open amazon" in c.lower():
+        webbrowser.open("https://amazon.com")
+    elif "open linkdin" in c.lower():
+        webbrowser.open("https://linkdin.com")
+    elif "open chatgpt" in c.lower():
+        webbrowser.open("https://chatgpt.com")
+    elif "open memphis" in c.lower():
+        webbrowser.open("https://memphis.com")
+    elif c.lower().startswith("play"):
+        song = c.lower().split(" ")[1]
+        link = musicLibrary.music[song]
+        webbrowser.open(link)
+    elif " tell me the news" in c.lower():
+        r = requests.get(f"https://newsapi.org/v2/top-headlines?country=in&apiKey={newsapi} ") # again needed the suscription
+        if r.status_code == 200:
+            #parse the jsonresponce
+            data = r.json()
+            #extract the article 
+            articles = data.get('articles',[])
+            #speak headlines
+            for article in articles:
+                speak(article['title'])
+    else:
+        # let openai handle the situation
+        output = aiprocess(c)
+        speak(output)
+
+if __name__ == "__main__":
+    speak("Initialising Tapesh personal assistant.....")
+    # listen for the wake word
+    while True:
+        # obtain audio from the microphone
+        r = sr.Recognizer()
+# recognize speech using Sphinx but we are using google for better audio read
+        print("recognising......")
+        try:
+            with sr.Microphone() as source:
+                print("Listening.....")
+                audio = r.listen(source,timeout=2,phrase_time_limit=1)
+                word = r.recognize_google(audio)
+                if(word.lower()=="hello baby"):
+                    speak("yo yo")
+                    with sr.Microphone() as source:
+                        print("Tapesh assistant active.....")
+                        audio = r.listen(source)
+                        command = r.recognize_google(audio)
+
+                        processCommand(command)
+                    #listen for command
+        except Exception as e:
+            print("error; {0}".format(e))         
+                
+                
+
+            
+        
